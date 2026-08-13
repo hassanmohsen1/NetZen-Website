@@ -18,6 +18,11 @@
   ::selection {
     @apply bg-primary-fixed text-on-primary-fixed;
   }
+
+  /* The navbar is fixed at 80px tall, so anchor targets need to clear it. */
+  section[id] {
+    scroll-margin-top: 5rem;
+  }
 }
 
 @layer components {
@@ -64,6 +69,14 @@
   .btn-outline:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 91, 192, 0.15);
+  }
+
+  /* These are anchors wherever they navigate to a section. */
+  a.btn-primary,
+  a.btn-outline {
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
   }
 }
 

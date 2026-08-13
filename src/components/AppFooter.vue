@@ -12,18 +12,21 @@ const { t, tm, rt } = useLocale()
     >
       <!-- Brand -->
       <div class="space-y-6">
-        <div class="text-headline-sm font-bold text-on-surface">NetZen</div>
+        <div class="text-headline-sm font-bold text-on-surface">
+          {{ t('footer.brand') }}
+        </div>
         <p class="text-body-md text-on-surface-variant">
           {{ t('footer.tagline') }}
         </p>
         <div class="flex gap-4">
-          <div
-            v-for="icon in ['public', 'groups', 'rss_feed']"
-            :key="icon"
+          <a
+            v-for="(item, i) in tm('footer.social')"
+            :key="i"
+            :href="rt(item.url)"
             class="social-icon w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center cursor-pointer"
           >
-            <span class="material-symbols-outlined text-sm">{{ icon }}</span>
-          </div>
+            <span class="material-symbols-outlined text-sm">{{ rt(item.icon) }}</span>
+          </a>
         </div>
       </div>
 
@@ -37,10 +40,10 @@ const { t, tm, rt } = useLocale()
         <ul class="space-y-4">
           <li v-for="(link, i) in tm('footer.servicesLinks')" :key="i">
             <a
-              href="#"
+              :href="rt(link.href)"
               class="text-on-surface-variant hover:text-primary transition-colors text-body-md"
             >
-              {{ rt(link) }}
+              {{ rt(link.label) }}
             </a>
           </li>
         </ul>
@@ -56,10 +59,10 @@ const { t, tm, rt } = useLocale()
         <ul class="space-y-4">
           <li v-for="(link, i) in tm('footer.companyLinks')" :key="i">
             <a
-              href="#"
+              :href="rt(link.href)"
               class="text-on-surface-variant hover:text-primary transition-colors text-body-md"
             >
-              {{ rt(link) }}
+              {{ rt(link.label) }}
             </a>
           </li>
         </ul>
@@ -99,17 +102,12 @@ const { t, tm, rt } = useLocale()
       </p>
       <div class="flex flex-wrap justify-center gap-4 md:gap-8">
         <a
-          v-for="link in [
-            'privacyPolicy',
-            'terms',
-            'cookiePolicy',
-            'sitemap',
-          ]"
-          :key="link"
-          href="#"
+          v-for="(link, i) in tm('footer.bottomLinks')"
+          :key="i"
+          :href="rt(link.href)"
           class="text-label-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
         >
-          {{ t(`footer.${link}`) }}
+          {{ rt(link.label) }}
         </a>
       </div>
     </div>

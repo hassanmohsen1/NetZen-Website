@@ -1,13 +1,10 @@
 <script setup>
 import { useLocale } from '@/composables/useLocale'
 const { t, tm, rt } = useLocale()
-
-const teamImage =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuA9mqcXk4fa--xFTHgbKlp5E1x1wqqaQ_ggXPMTPJuR6mTrSpKZsMXkw9VLMtYUVoZJ53nbaEXf9lOTo5LTd49DK8WUBvycQP_ljtgvjUCkjAF0-PyIq6wbUF7_URrGdgW2osGRBW9dcszKxM8Gtw8jpPaw1i07mz6cQo_bn6RaE0oh3T2PYDTvTIgBK2x3c_UMU_w3wo17UhNMowVGJwFQYZjKFX-tkbF-kuzuW2dkf3er0nRkLwhmyf0DKJKxtMoTrrvOpAAYr3c'
 </script>
 
 <template>
-  <section class="py-24 md:py-32">
+  <section id="about" class="py-24 md:py-32">
     <div class="px-4 md:px-margin-desktop max-w-container-max mx-auto">
       <div class="flex flex-col md:flex-row gap-12 md:gap-16 items-center">
         <!-- Text -->
@@ -44,7 +41,7 @@ const teamImage =
         <!-- Image -->
         <div v-reveal class="flex-1 relative">
           <div class="rounded-2xl overflow-hidden shadow-2xl">
-            <img :src="teamImage" alt="" class="w-full h-auto" />
+            <img :src="t('whyNetzen.image')" alt="" class="w-full h-auto" />
           </div>
         </div>
       </div>

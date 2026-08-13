@@ -1,24 +1,22 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useLocale } from '@/composables/useLocale'
 
-const { t, toggleLocale, isRtl } = useLocale()
+const { t, tm, rt, toggleLocale } = useLocale()
 const mobileOpen = ref(false)
 const scrolled = ref(false)
 
-const navLinks = [
-  { key: 'home', href: '#home' },
-  { key: 'services', href: '#services' },
-  { key: 'solutions', href: '#solutions' },
-  { key: 'portfolio', href: '#portfolio' },
-  { key: 'about', href: '#about' },
-  { key: 'contact', href: '#contact' },
-]
+const navLinks = computed(() =>
+  (tm('nav.links') || []).map((link) => ({
+    label: rt(link.label),
+    href: rt(link.href),
+  }))
+)
 
-const activeLink = ref('home')
+const activeLink = ref('#home')
 
-function setActive(key) {
-  activeLink.value = key
+function setActive(href) {
+  activeLink.value = href
   mobileOpen.value = false
 }
 
@@ -39,26 +37,32 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
       class="flex justify-between items-center w-full px-4 md:px-margin-desktop max-w-container-max mx-auto h-full"
     >
       <!-- Logo -->
-      <div class="text-headline-sm font-bold text-primary logo-text cursor-pointer">NetZen</div>
+      <a
+        href="#home"
+        class="text-headline-sm font-bold text-primary logo-text cursor-pointer"
+        @click="setActive('#home')"
+      >
+        {{ t('nav.brand') }}
+      </a>
 
       <!-- Desktop Nav -->
       <div class="hidden md:flex gap-8 items-center">
         <a
           v-for="link in navLinks"
-          :key="link.key"
+          :key="link.href"
           :href="link.href"
           class="text-label-md font-medium transition-all duration-300 relative"
           :class="
-            activeLink === link.key
+            activeLink === link.href
               ? 'text-primary'
               : 'text-on-surface-variant hover:text-primary'
           "
-          @click="setActive(link.key)"
+          @click="setActive(link.href)"
         >
-          {{ t(`nav.${link.key}`) }}
+          {{ link.label }}
           <span
             class="absolute bottom-[-4px] left-0 right-0 h-[2px] bg-primary transition-transform duration-300 origin-left"
-            :class="activeLink === link.key ? 'scale-x-100' : 'scale-x-0'"
+            :class="activeLink === link.href ? 'scale-x-100' : 'scale-x-0'"
           ></span>
         </a>
       </div>
@@ -71,11 +75,9 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
         >
           {{ t('nav.langToggle') }}
         </button>
-        <button
-          class="hidden sm:block btn-primary !py-2.5 !px-6 !shadow-lg"
-        >
+        <a href="#contact" class="hidden sm:block btn-primary !py-2.5 !px-6 !shadow-lg">
           {{ t('nav.getQuote') }}
-        </button>
+        </a>
 
         <!-- Mobile hamburger -->
         <button
@@ -105,23 +107,25 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
         <div class="flex flex-col gap-1 p-4">
           <a
             v-for="link in navLinks"
-            :key="link.key"
+            :key="link.href"
             :href="link.href"
             class="text-label-md font-medium px-4 py-3 rounded-xl transition-all duration-300"
             :class="
-              activeLink === link.key
+              activeLink === link.href
                 ? 'text-primary bg-primary/5'
                 : 'text-on-surface-variant hover:bg-surface-container'
             "
-            @click="setActive(link.key)"
+            @click="setActive(link.href)"
           >
-            {{ t(`nav.${link.key}`) }}
+            {{ link.label }}
           </a>
-          <button
-            class="mt-2 btn-primary sm:hidden !py-3"
+          <a
+            href="#contact"
+            class="mt-2 btn-primary sm:hidden !py-3 text-center"
+            @click="mobileOpen = false"
           >
             {{ t('nav.getQuote') }}
-          </button>
+          </a>
         </div>
       </div>
     </Transition>

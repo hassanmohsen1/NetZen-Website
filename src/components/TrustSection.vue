@@ -1,60 +1,104 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useLocale } from '@/composables/useLocale'
-const { t } = useLocale()
 
-const statsData = [
-  { value: 1000, suffix: '+', key: 'problemsSolved' },
-  { value: 50, suffix: '+', key: 'enterpriseClients' },
-  { value: 99.9, suffix: '%', key: 'availability' },
-  { value: 0, display: '24/7', key: 'expertSupport' },
-]
+const { t, tm, rt } = useLocale()
 
-const logos = ['TechCore', 'GlobalOps', 'InfraStream', 'DataSphere', 'CloudNet']
+const stats = computed(() =>
+  (tm('stats.items') || []).map((stat) => ({
+    value: rt(stat.value),
+    suffix: rt(stat.suffix),
+    display: rt(stat.display),
+    label: rt(stat.label),
+  }))
+)
 
-const displayValues = ref(statsData.map(s => s.display || '0'))
-const counted = ref(false)
+const logos = computed(() => (tm('stats.logos') || []).map((logo) => rt(logo)))
+
 const statsEl = ref(null)
+const displayValues = ref([])
+const inView = ref(false)
+let timers = []
 let observer = null
 
+function clearTimers() {
+  timers.forEach(clearInterval)
+  timers = []
+}
+
+function resetDisplay() {
+  displayValues.value = stats.value.map((stat) => stat.display || '0')
+}
+
 function animateCounters() {
-  if (counted.value) return
-  counted.value = true
-  statsData.forEach((stat, i) => {
-    if (stat.display) return
-    const target = stat.value
-    const isDecimal = target % 1 !== 0
+  clearTimers()
+  stats.value.forEach((stat, i) => {
+    // A literal display value ("24/7") is shown as-is, never counted up.
+    if (stat.display) {
+      displayValues.value[i] = stat.display
+      return
+    }
+    const target = Number.parseFloat(stat.value)
+    if (!Number.isFinite(target)) {
+      displayValues.value[i] = stat.value || ''
+      return
+    }
+    const decimals = (String(stat.value).split('.')[1] || '').length
     const steps = 60
-    const increment = target / steps
-    let current = 0
     let step = 0
-    const interval = setInterval(() => {
-      step++
-      current += increment
-      if (step >= steps || current >= target) {
-        current = target
-        clearInterval(interval)
+    const timer = setInterval(() => {
+      step += 1
+      const current = Math.min(target, (target / steps) * step)
+      displayValues.value[i] = decimals
+        ? current.toFixed(decimals)
+        : String(Math.floor(current))
+      if (step >= steps) {
+        displayValues.value[i] = decimals
+          ? target.toFixed(decimals)
+          : String(Math.floor(target))
+        clearInterval(timer)
       }
-      displayValues.value[i] = isDecimal ? current.toFixed(1) : String(Math.floor(current))
     }, 33)
+    timers.push(timer)
   })
 }
 
+// Content arrives from Firestore after mount, so the counters have to be able
+// to re-seed themselves rather than animating once against the bundled values.
+watch(
+  stats,
+  () => {
+    resetDisplay()
+    if (inView.value) animateCounters()
+  },
+  { immediate: true, deep: true }
+)
+
 onMounted(() => {
-  if (!statsEl.value) return
+  // Without IntersectionObserver the counters would sit at zero forever, which
+  // is worse than skipping the animation — so show the real numbers instead.
+  if (!statsEl.value || !('IntersectionObserver' in window)) {
+    inView.value = true
+    animateCounters()
+    return
+  }
   observer = new IntersectionObserver(
     (entries) => {
-      if (entries[0].isIntersecting) {
-        animateCounters()
-        observer?.disconnect()
-      }
+      if (!entries[0].isIntersecting) return
+      inView.value = true
+      animateCounters()
+      observer?.disconnect()
+      observer = null
     },
     { threshold: 0.2 }
   )
   observer.observe(statsEl.value)
 })
 
-onUnmounted(() => observer?.disconnect())
+onUnmounted(() => {
+  observer?.disconnect()
+  clearTimers()
+})
 </script>
 
 <template>
@@ -63,15 +107,15 @@ onUnmounted(() => observer?.disconnect())
       <!-- Stats -->
       <div ref="statsEl" v-reveal class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mb-20">
         <div
-          v-for="(stat, i) in statsData"
-          :key="stat.key"
+          v-for="(stat, i) in stats"
+          :key="i"
           class="stat-card text-center p-6 bg-surface-container-lowest rounded-2xl shadow-sm cursor-default"
         >
           <div class="text-display-lg-mobile md:text-display-lg font-bold stat-value mb-2">
-            {{ stat.display ? displayValues[i] : displayValues[i] + stat.suffix }}
+            {{ displayValues[i] }}{{ stat.display ? '' : stat.suffix }}
           </div>
           <div class="text-label-md font-medium text-on-surface-variant">
-            {{ t(`stats.${stat.key}`) }}
+            {{ stat.label }}
           </div>
         </div>
       </div>
@@ -83,12 +127,10 @@ onUnmounted(() => observer?.disconnect())
         >
           {{ t('stats.trustedBy') }}
         </p>
-        <div
-          class="flex flex-wrap justify-center gap-8 md:gap-12"
-        >
+        <div class="flex flex-wrap justify-center gap-8 md:gap-12">
           <div
-            v-for="logo in logos"
-            :key="logo"
+            v-for="(logo, i) in logos"
+            :key="i"
             class="tech-logo text-headline-sm font-bold cursor-default"
           >
             {{ logo }}

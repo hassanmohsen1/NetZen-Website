@@ -1,6 +1,34 @@
 <script setup>
+import { computed } from 'vue'
 import { useLocale } from '@/composables/useLocale'
-const { t, isRtl } = useLocale()
+
+const { t, tm, rt, isRtl } = useLocale()
+
+// Each floating badge picks a slot from the dashboard. Anchoring by named slot
+// (rather than by array index) keeps the layout stable when an admin reorders
+// or removes a badge.
+const POSITIONS = {
+  'top-start': { ltr: '-top-6 -left-6', rtl: '-top-6 -right-6' },
+  'middle-end': { ltr: 'top-1/4 -right-10', rtl: 'top-1/4 -left-10' },
+  'bottom-start': { ltr: 'bottom-10 -left-8', rtl: 'bottom-10 -right-8' },
+}
+
+const badges = computed(() =>
+  (tm('hero.badges') || []).map((badge, i) => {
+    const position = rt(badge.position) || 'top-start'
+    const slot = POSITIONS[position] || POSITIONS['top-start']
+    return {
+      key: `${position}-${i}`,
+      icon: rt(badge.icon),
+      text: rt(badge.text),
+      color: rt(badge.color),
+      textColor: rt(badge.textColor),
+      placement: isRtl.value ? slot.rtl : slot.ltr,
+      pulse: position === 'middle-end',
+      delay: `${i * 0.7}s`,
+    }
+  })
+)
 </script>
 
 <template>
@@ -22,56 +50,34 @@ const { t, isRtl } = useLocale()
           {{ t('hero.subtitle') }}
         </p>
         <div class="flex flex-wrap gap-4">
-          <button class="btn-primary">{{ t('hero.cta') }}</button>
-          <button class="btn-outline">{{ t('hero.ctaSecondary') }}</button>
+          <a href="#contact" class="btn-primary">{{ t('hero.cta') }}</a>
+          <a href="#services" class="btn-outline">{{ t('hero.ctaSecondary') }}</a>
         </div>
       </div>
 
       <div class="relative hidden md:block">
         <div class="relative z-10 w-full rounded-2xl overflow-hidden shadow-2xl gradient-border">
           <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBR07f_CVd1i3nxTcyemndO-YpBV0A-6PUwXGj0YcrUIVKM20MO2C79pj7OoptjHjT_GvT_f01zxDChnhNfRzzsYsE4elDBoBt110uUf6QmCJZlaGgOBpPTPaMiakZVjIvUyLUijSfl98RgfTRch_NFAn9w07eJhEDHr1h9sdr-fa2IPd8Gd28FMB-sYNmFXQy27GkPQUJUyuDzg4fUy4cM2Nynu7C8FcFOWv5QAAscq9NgVD39tvlT2OJF_3puMP9b7IFeZGbInso"
+            :src="t('hero.image')"
             alt="Infrastructure Visualization"
             class="w-full h-auto object-cover"
           />
         </div>
 
         <div
-          class="absolute -top-6 glass-card p-4 rounded-2xl flex items-center gap-3 floating z-20"
-          :class="isRtl ? '-right-6' : '-left-6'"
+          v-for="badge in badges"
+          :key="badge.key"
+          class="absolute glass-card p-4 rounded-2xl flex items-center gap-3 floating z-20"
+          :class="[badge.placement, badge.pulse ? 'pulse-dot' : '']"
+          :style="{ animationDelay: badge.delay }"
         >
           <div
-            class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container"
+            class="w-10 h-10 rounded-full flex items-center justify-center"
+            :class="`bg-${badge.color} text-${badge.textColor}`"
           >
-            <span class="material-symbols-outlined text-sm">support_agent</span>
+            <span class="material-symbols-outlined text-sm">{{ badge.icon }}</span>
           </div>
-          <span class="text-label-md font-medium">{{ t('hero.badge1') }}</span>
-        </div>
-
-        <div
-          class="absolute top-1/4 glass-card p-4 rounded-2xl flex items-center gap-3 floating z-20 pulse-dot"
-          :class="isRtl ? '-left-10' : '-right-10'"
-          style="animation-delay: 1.5s"
-        >
-          <div
-            class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container"
-          >
-            <span class="material-symbols-outlined text-sm">shield</span>
-          </div>
-          <span class="text-label-md font-medium">{{ t('hero.badge2') }}</span>
-        </div>
-
-        <div
-          class="absolute bottom-10 glass-card p-4 rounded-2xl flex items-center gap-3 floating z-20"
-          :class="isRtl ? '-right-8' : '-left-8'"
-          style="animation-delay: 0.8s"
-        >
-          <div
-            class="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container"
-          >
-            <span class="material-symbols-outlined text-sm">cloud_done</span>
-          </div>
-          <span class="text-label-md font-medium">{{ t('hero.badge3') }}</span>
+          <span class="text-label-md font-medium">{{ badge.text }}</span>
         </div>
       </div>
     </div>

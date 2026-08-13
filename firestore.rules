@@ -1,0 +1,60 @@
+rules_version = '2';
+
+// NetZen landing page — there is no backend, so these rules ARE the security
+// model. The Firebase web API key in .env is not a secret; this file is what
+// stops anyone from editing your site content.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // An admin is any signed-in user with a document in /admins keyed by their
+    // UID. exists() runs with privileged access, so it is not blocked by the
+    // read rule on /admins below.
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // A contact submission a visitor is allowed to create. Every field is
+    // pinned so the collection cannot be used as free storage: `read` must
+    // start false, and `createdAt` must be the server's own clock rather than
+    // a client-supplied value.
+    function isValidSubmission() {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['name', 'email', 'service', 'message', 'locale', 'read', 'createdAt'])
+        && data.keys().hasAll(['name', 'email', 'message', 'read', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 200
+        && data.message is string && data.message.size() > 0 && data.message.size() <= 5000
+        && (!('service' in data.keys()) || (data.service is string && data.service.size() <= 100))
+        && (!('locale' in data.keys()) || (data.locale is string && data.locale.size() <= 5))
+        && data.read == false
+        && data.createdAt == request.time;
+    }
+
+    // Site content: readable by every visitor, writable only by admins.
+    match /content/{locale} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Contact form: anyone may post a well-formed message, nobody but an admin
+    // may read, change or delete one.
+    match /submissions/{submissionId} {
+      allow create: if isValidSubmission();
+      allow read, update, delete: if isAdmin();
+    }
+
+    // The admin allowlist. A signed-in user may check their own membership so
+    // the dashboard can explain why access was refused. Granting admin is done
+    // from the Firebase console only — never from the client.
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Anything not matched above is denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
