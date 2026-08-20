@@ -22,11 +22,6 @@ service cloud.firestore {
       let data = request.resource.data;
       return data.keys().hasOnly(['name', 'email', 'service', 'message', 'locale', 'read', 'createdAt'])
         && data.keys().hasAll(['name', 'email', 'message', 'read', 'createdAt'])
-        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
-        && data.email is string && data.email.size() > 0 && data.email.size() <= 200
-        && data.message is string && data.message.size() > 0 && data.message.size() <= 5000
-        && (!('service' in data.keys()) || (data.service is string && data.service.size() <= 100))
-        && (!('locale' in data.keys()) || (data.locale is string && data.locale.size() <= 5))
         && data.read == false
         && data.createdAt == request.time;
     }

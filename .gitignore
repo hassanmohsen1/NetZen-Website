@@ -2,11 +2,6 @@
 /.claude
 /dist
 
-# Local Firebase credentials — copy .env.example to .env
-.env
-.env.local
-.env.*.local
-
 # Firebase CLI
 .firebase/
 firebase-debug.log
