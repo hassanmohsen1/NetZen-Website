@@ -12,7 +12,7 @@ const props = defineProps({
 })
 
 const { email } = useAdminAuth()
-
+//test
 const draft = reactive({ en: {}, ar: {} })
 const original = ref(null)
 const loading = ref(true)
